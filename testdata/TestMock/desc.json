@@ -1,0 +1,7 @@
+{
+  "input": "input_test.go",
+  "args": [
+    "io.Reader"
+  ],
+  "expected": "expected.go"
+}

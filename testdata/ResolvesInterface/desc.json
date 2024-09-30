@@ -1,0 +1,7 @@
+{
+  "input": "input.go",
+  "args": [
+    "app.Void"
+  ],
+  "expected": "expected.go"
+}

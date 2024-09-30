@@ -1,0 +1,7 @@
+{
+  "input": "input.go",
+  "args": [
+    "ResolvesArg"
+  ],
+  "expected": "expected.go"
+}

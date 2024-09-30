@@ -1,0 +1,7 @@
+{
+  "input": "input.go",
+  "args": [
+    "MultiReturn"
+  ],
+  "expected": "expected.go"
+}

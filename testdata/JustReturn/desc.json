@@ -1,0 +1,7 @@
+{
+  "input": "input.go",
+  "args": [
+    "JustReturn"
+  ],
+  "expected": "expected.go"
+}

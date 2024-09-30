@@ -1,0 +1,7 @@
+{
+  "input": "input.go",
+  "args": [
+    "suite.AfterTest"
+  ],
+  "expected": "expected.go"
+}

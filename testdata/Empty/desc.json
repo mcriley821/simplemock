@@ -1,0 +1,7 @@
+{
+  "input": "input.go",
+  "args": [
+    "Empty"
+  ],
+  "expected": "expected.go"
+}
