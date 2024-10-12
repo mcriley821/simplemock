@@ -65,9 +65,9 @@ func main() {
 
 	typeName := os.Args[1]
 
-	input := os.Getenv("GOFILE")
-	if input == "" {
-		println("Expected GOFILE environment variable to be set.")
+	inputPkg := os.Getenv("GOPACKAGE")
+	if inputPkg == "" {
+		println("Expected GOPACKAGE environment variable to be set.")
 		println("You should be using a //go:generate directive.")
 		os.Exit(1)
 	}
@@ -82,7 +82,7 @@ func main() {
 			packages.NeedTypesInfo,
 	}
 
-	pkgs, err := packages.Load(&cfg, input)
+	pkgs, err := packages.Load(&cfg, inputPkg)
 	if err != nil {
 		fmt.Printf("Failed to load input package and its dependencies: %v\n", err)
 		os.Exit(1)
