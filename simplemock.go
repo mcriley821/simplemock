@@ -64,12 +64,13 @@ func (m *{{ $mockName }}) {{ .Name }}{{ signature .Signature }} {
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		println("Usage: simplemock interface")
+	if len(os.Args) != 3 {
+		println("Usage: simplemock interface outfile")
 		os.Exit(1)
 	}
 
 	typeName := os.Args[1]
+	fname := os.Args[2]
 
 	inputFile := os.Getenv("GOFILE")
 	if inputFile == "" {
@@ -86,6 +87,7 @@ func main() {
 			packages.NeedTypes |
 			packages.NeedSyntax |
 			packages.NeedTypesInfo,
+		Tests: true,
 	}
 
 	pkgs, err := packages.Load(&cfg, "file="+inputFile)
@@ -149,7 +151,16 @@ func main() {
 		pkgName = strings.TrimSuffix(pkgs[0].Name, "_test") + "_test"
 	}
 
-	templ.Execute(os.Stdout, templData{
+	file := os.Stdout
+	if fname != "os.Stdout" {
+		file, err = os.Open(fname)
+		if err != nil {
+			fmt.Printf("Failed to create output file '%s': %v\n", fname, err)
+			os.Exit(1)
+		}
+	}
+
+	templ.Execute(file, templData{
 		PackageName:   pkgName,
 		Imports:       imports,
 		InterfaceName: types.TypeString(obj.Type(), relativeTo),

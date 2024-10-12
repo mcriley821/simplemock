@@ -28,8 +28,7 @@ func TestSimplemock(t *testing.T) {
 			cmd.Dir = dirName
 
 			actual, err := cmd.Output()
-			assert.NoError(t, err)
-			require.NotNil(t, actual)
+			require.NoError(t, err, "output: %s", actual)
 
 			expected, err := os.ReadFile(path.Join(dirName, "expected.txt"))
 			assert.NoError(t, err)
