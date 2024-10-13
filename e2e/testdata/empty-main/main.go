@@ -1,6 +1,6 @@
 package main
 
-//go:generate simplemock Empty os.Stdout
+//go:generate simplemock -iface Empty -out os.Stdout
 
 type Empty interface{}
 

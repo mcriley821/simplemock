@@ -4,7 +4,7 @@ import (
 	"empty/empty"
 )
 
-//go:generate simplemock empty.Empty os.Stdout
+//go:generate simplemock -iface empty.Empty -out os.Stdout
 
 func main() {
 	var _ empty.Empty = nil

@@ -2,14 +2,53 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/types"
 	"os"
+	"path"
+	"runtime/debug"
 	"strings"
 	"text/template"
 
 	"golang.org/x/tools/go/packages"
+)
+
+const (
+	usageLine = `
+Usage: simplemock [-help] [-version] -iface interface -out outfile
+
+Options:
+`
+
+	longHelp = `
+simplemock generates mock implementations for interfaces and is designed to be
+used with //go:generate directives to streamline usage and cohesiveness. Mocks
+can be generated for any interface defined within the scope of the source file,
+including interfaces that have been imported.
+
+The required option -iface specifies the identifier of the interface for which
+a mock is to be generated. This should match the interface name as it would
+appear in the source file if it were to be used directly. For package-scoped
+interfaces, this would simply be the interface name, e.g. 'MyInterface'. For
+interfaces that have been imported, this would be its qualified identifier,
+e.g. 'io.Reader'.
+
+The required option -out specifies a relative file path where the generated
+mock will be written. This path is relative to the source file. The special
+value "os.Stdout" indicates that the generated mock should be printed to stdout
+instead of written to disk.
+
+Generated mocks will be defined in the test package corresponding to the
+package of the source file. In the case the source file is within the main
+package, the mock will also be defined in the main package.
+
+Mock structs export members corresponding to each method of the interface,
+named with a "Func" suffix. When the mocked method is invoked, the call is
+forwarded to the corresponding member. If the member is not implemented, and
+thus nil, the mocked method will panic.
+`
 )
 
 type templData struct {
@@ -63,19 +102,58 @@ func (m *{{ $mockName }}) {{ .Name }}{{ signature .Signature }} {
 	))
 )
 
+func usage() {
+	f := flag.CommandLine.Output()
+
+	fmt.Fprint(f, usageLine[1:]) // trim newline
+	flag.PrintDefaults()
+}
+
+func helpExit(string) error {
+	flag.CommandLine.SetOutput(os.Stdout)
+	usage()
+	fmt.Fprint(os.Stdout, longHelp)
+	os.Exit(0)
+	return nil
+}
+
+func versionExit(string) error {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		fmt.Printf("version: %s\n", info.Main.Version)
+		os.Exit(0)
+	}
+	fmt.Fprintln(os.Stderr, "Failed reading build info?")
+	os.Exit(1)
+	return nil
+}
+
 func main() {
-	if len(os.Args) != 3 {
-		println("Usage: simplemock interface outfile")
+	flag.Usage = usage
+
+	var typeName, fname string
+
+	flag.StringVar(&typeName, "iface", "", "interface to generate a mock for")
+	flag.StringVar(&fname, "out", "", "relative output file")
+	flag.BoolFunc("version", "print version and exit", versionExit)
+	flag.BoolFunc("help", "print detailed help and exit", helpExit)
+	flag.Parse()
+
+	if typeName == "" {
+		fmt.Fprintln(os.Stderr, "option '-iface' is required")
+		usage()
 		os.Exit(1)
 	}
 
-	typeName := os.Args[1]
-	fname := os.Args[2]
+	if fname == "" {
+		fmt.Fprintln(os.Stderr, "option '-out' is required")
+		usage()
+		os.Exit(1)
+	}
 
 	inputFile := os.Getenv("GOFILE")
 	if inputFile == "" {
-		println("Expected GOFILE environment variable to be set.")
-		println("You should be using a //go:generate directive.")
+		fmt.Fprintln(os.Stderr, "Expected GOFILE environment variable to be set.")
+		fmt.Fprintln(os.Stderr, "You should be using a //go:generate directive.")
 		os.Exit(1)
 	}
 
@@ -92,7 +170,7 @@ func main() {
 
 	pkgs, err := packages.Load(&cfg, "file="+inputFile)
 	if err != nil {
-		fmt.Printf("Failed to load input package and its dependencies: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to load input package and its dependencies: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -114,29 +192,29 @@ func main() {
 			}
 		}
 		if obj == nil {
-			fmt.Printf("Could not find type '%s'\n", typeName)
+			fmt.Fprintf(os.Stderr, "Could not find type '%s'\n", typeName)
 			os.Exit(1)
 		}
 	}
 
 	if _, ok := obj.(*types.TypeName); !ok {
-		fmt.Printf("Type %v is not a named type\n", obj)
+		fmt.Fprintf(os.Stderr, "Type %v is not a named type\n", obj)
 		os.Exit(1)
 	}
 
 	if !types.IsInterface(obj.Type()) {
-		fmt.Printf("Type %v is not an interface\n", obj)
+		fmt.Fprintf(os.Stderr, "Type %v is not an interface\n", obj)
 		os.Exit(1)
 	}
 
 	if !obj.Exported() {
-		fmt.Printf("Interface %v is not exported\n", obj)
+		fmt.Fprintf(os.Stderr, "Interface %v is not exported\n", obj)
 		os.Exit(1)
 	}
 
 	imports, err := importsUsedBy(obj, pkgs)
 	if err != nil {
-		fmt.Printf("Failed getting %v imports: %v\n", obj, err)
+		fmt.Fprintf(os.Stderr, "Failed getting %v imports: %v\n", obj, err)
 		os.Exit(1)
 	}
 
@@ -153,20 +231,25 @@ func main() {
 
 	file := os.Stdout
 	if fname != "os.Stdout" {
-		file, err = os.Open(fname)
+		file, err = os.Create(path.Clean(path.Join(path.Dir(inputFile), fname)))
 		if err != nil {
-			fmt.Printf("Failed to create output file '%s': %v\n", fname, err)
+			fmt.Fprintf(os.Stderr, "Failed to create output file '%s': %v\n", fname, err)
 			os.Exit(1)
 		}
 	}
 
-	templ.Execute(file, templData{
+	err = templ.Execute(file, templData{
 		PackageName:   pkgName,
 		Imports:       imports,
 		InterfaceName: types.TypeString(obj.Type(), relativeTo),
 		MockName:      obj.Name() + "Mock",
 		Methods:       methods,
 	})
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to generate mock from template: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func importsUsedBy(obj types.Object, pkgs []*packages.Package) ([]*packages.Package, error) {

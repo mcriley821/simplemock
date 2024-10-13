@@ -21,9 +21,11 @@ lint: vet staticcheck gosec
 fmt *args:
     go fmt {{ args }} ./...
 
-cover *args:
-    go test -coverprofile=.cover.prof {{args}} ./...
-    go tool cover -func .cover.prof
+build *args:
+    go build {{ args }} .
+
+test *args:
+    cd e2e && go clean -testcache && go test {{ args }} ./...
 
 clean *args:
     go clean {{args}}
