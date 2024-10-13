@@ -332,7 +332,11 @@ func signature(sig *types.Signature) string {
 			args[i] = name
 		}
 
-		args[i] += " " + typeString(param.Type())
+		if i == params.Len() - 1 && sig.Variadic() {
+			args[i] += " ..." + strings.TrimPrefix(typeString(param.Type()), "[]")
+		} else {
+			args[i] += " " + typeString(param.Type())
+		}
 	}
 
 	argsStr := strings.Join(args, ", ")
@@ -353,7 +357,11 @@ func defaultedArgs(sig *types.Signature) string {
 		}
 	}
 
-	return strings.Join(args, ", ")
+	ret := strings.Join(args, ", ")
+	if sig.Variadic() {
+		return ret + "..."
+	}
+	return ret
 }
 
 func relativeTo(pkg *types.Package) string {

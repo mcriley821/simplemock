@@ -24,8 +24,11 @@ fmt *args:
 build *args:
     go build {{ args }} .
 
-test *args:
-    cd e2e && go clean -testcache && go test {{ args }} ./...
+install *args:
+    go install {{ args }} .
+
+test *args: install
+    cd e2e && go clean -testcache && go test -v {{ args }} ./...
 
 clean *args:
     go clean {{args}}

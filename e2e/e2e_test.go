@@ -27,7 +27,7 @@ func TestSimplemock(t *testing.T) {
 			cmd := exec.Command("go", "generate", "./...")
 			cmd.Dir = dirName
 
-			actual, err := cmd.Output()
+			actual, err := cmd.CombinedOutput()
 			require.NoError(t, err, "output: %s", actual)
 
 			expected, err := os.ReadFile(path.Join(dirName, "expected.txt"))
