@@ -2,19 +2,35 @@
 package pkg_test
 
 import (
-	"empty/pkg"
 	"github.com/stretchr/testify/suite"
+	"testing"
 )
 
-var _ pkg.Suite = &SuiteMock{}
+var _ suite.TestingSuite = &TestingSuiteMock{}
 
-type SuiteMock struct {
-	TestSuiteFunc func() suite.TestingSuite
+type TestingSuiteMock struct {
+	SetSFunc func(suite suite.TestingSuite)
+	SetTFunc func(*testing.T)
+	TFunc func() *testing.T
 }
 
-func (m *SuiteMock) TestSuite() (suite.TestingSuite) {
-	if m.TestSuiteFunc != nil {
-		return m.TestSuiteFunc()
+func (m *TestingSuiteMock) SetS(suite suite.TestingSuite) {
+	if m.SetSFunc != nil {
+		return m.SetSFunc(suite)
 	}
-	panic("TestSuite called with nil TestSuiteFunc!")
+	panic("SetS called with nil SetSFunc!")
+}
+
+func (m *TestingSuiteMock) SetT(arg0 *testing.T) {
+	if m.SetTFunc != nil {
+		return m.SetTFunc(arg0)
+	}
+	panic("SetT called with nil SetTFunc!")
+}
+
+func (m *TestingSuiteMock) T() (*testing.T) {
+	if m.TFunc != nil {
+		return m.TFunc()
+	}
+	panic("T called with nil TFunc!")
 }

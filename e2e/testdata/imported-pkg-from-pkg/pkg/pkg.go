@@ -2,8 +2,6 @@ package pkg
 
 import "github.com/stretchr/testify/suite"
 
-//go:generate simplemock -iface Suite -out os.Stdout
+//go:generate simplemock -iface suite.TestingSuite -out os.Stdout
 
-type Suite interface {
-	TestSuite() suite.TestingSuite
-}
+var _ suite.TestingSuite
