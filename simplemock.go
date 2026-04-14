@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -295,6 +296,10 @@ func importsUsedBy(obj types.Object, pkgs []*packages.Package) ([]*packages.Pack
 			}
 		}
 	}
+
+	slices.SortFunc(imports, func(a, b *packages.Package) int {
+		return strings.Compare(a.PkgPath, b.PkgPath)
+	})
 	return imports, nil
 }
 

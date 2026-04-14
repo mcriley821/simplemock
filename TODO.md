@@ -4,7 +4,7 @@
 
 - **Panic on empty package load** (`simplemock.go:177`): `pkgs[0]` is accessed without first checking that `packages.Load` returned at least one package. An empty slice causes an immediate panic with no useful error message.
 
-- **Non-deterministic import ordering** (`simplemock.go:291`): `v.pkgs` is a `map[*types.Package]struct{}`, and Go map iteration order is random. Generated imports appear in a different order on each run, producing noisy diffs in version control and breaking the e2e `expected.txt` comparisons non-deterministically.
+- ~~**Non-deterministic import ordering** (`simplemock.go:291`): `v.pkgs` is a `map[*types.Package]struct{}`, and Go map iteration order is random. Generated imports appear in a different order on each run, producing noisy diffs in version control and breaking the e2e `expected.txt` comparisons non-deterministically.~~ **Fixed** — imports are now sorted by `PkgPath` before output.
 
 - **Non-deterministic import selection by package name** (`simplemock.go:184`): `pkgs[0].Imports` is a `map[string]*packages.Package`. When searching for an import by its short name (e.g., two dependencies both named `v1` or `pkg`), the winning entry is chosen in random map-iteration order.
 
