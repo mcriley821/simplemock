@@ -2,11 +2,7 @@
 
 ## Bugs
 
-- **Panic on empty package load** (`simplemock.go:177`): `pkgs[0]` is accessed without first checking that `packages.Load` returned at least one package. An empty slice causes an immediate panic with no useful error message.
-
-- **Non-deterministic import ordering** (`simplemock.go:291`): `v.pkgs` is a `map[*types.Package]struct{}`, and Go map iteration order is random. Generated imports appear in a different order on each run, producing noisy diffs in version control and breaking the e2e `expected.txt` comparisons non-deterministically.
-
-- **Non-deterministic import selection by package name** (`simplemock.go:184`): `pkgs[0].Imports` is a `map[string]*packages.Package`. When searching for an import by its short name (e.g., two dependencies both named `v1` or `pkg`), the winning entry is chosen in random map-iteration order.
+- **Duplicate empty-package guard** (`simplemock.go:177–185`): The fix for the panic-on-empty-package-load left two consecutive `len(pkgs) == 0` checks with different error messages. The second check (lines 182–185) is unreachable dead code and should be removed.
 
 - **Misleading `strings.Cut` fallback logic** (`simplemock.go:179–182`): When `strings.Cut` returns `found=false` (no `.` in `typeName`), the swap `pkgName, typeName = typeName, pkgName` results in `pkgName=""`. The subsequent import-search loop then skips every package via `continue` (no package has an empty name), so control always falls through to the "Could not find type" error. The behaviour is accidentally correct but the logic is opaque and fragile.
 
@@ -39,8 +35,6 @@
 - **No test for interfaces with embedded interfaces**: A common Go pattern such as `type ReadWriter interface { io.Reader; io.Writer }` is not exercised. The AST visitor and import-collection logic may behave incorrectly for embedded types from external packages.
 
 - **No test for interfaces with unnamed parameters**: An interface method like `Read([]byte) (int, error)` (no parameter names) relies on the `arg%d` fallback in `signature()` and `defaultedArgs()`, but this path has no dedicated test.
-
-- **`assert.NoError` used where `require.NoError` is needed** (`e2e/e2e_test.go:15,34`): If `os.ReadDir` or `os.ReadFile` fails, execution continues past the error and produces confusing follow-on failures. Both should be `require.NoError` to abort the test immediately.
 
 ## Future-Proofing
 
