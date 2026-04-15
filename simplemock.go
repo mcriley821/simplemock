@@ -173,6 +173,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to load input package and its dependencies: %v\n", err)
 		os.Exit(1)
 	}
+	if len(pkgs) == 0 {
+		fmt.Fprintf(os.Stderr, "No packages found for file: %s\n", inputFile)
+		os.Exit(1)
+	}
 
 	if len(pkgs) == 0 {
 		fmt.Fprintln(os.Stderr, "No packages found for input file")
