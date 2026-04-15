@@ -179,32 +179,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(pkgs) == 0 {
-		fmt.Fprintln(os.Stderr, "No packages found for input file")
-		os.Exit(1)
-	}
-
 	obj := pkgs[0].Types.Scope().Lookup(typeName)
 	if obj == nil {
-		pkgName, typeName, found := strings.Cut(typeName, ".")
-		if !found {
-			pkgName, typeName = typeName, pkgName
-		}
-
-		importPaths := make([]string, 0, len(pkgs[0].Imports))
-		for path := range pkgs[0].Imports {
-			importPaths = append(importPaths, path)
-		}
-		sort.Strings(importPaths)
-		for _, importPath := range importPaths {
-			pkg := pkgs[0].Imports[importPath]
-			if pkg.Name != pkgName {
-				continue
+		if pkgName, ifaceName, found := strings.Cut(typeName, "."); found {
+			importPaths := make([]string, 0, len(pkgs[0].Imports))
+			for path := range pkgs[0].Imports {
+				importPaths = append(importPaths, path)
 			}
-			obj = pkg.Types.Scope().Lookup(typeName)
-			if obj != nil {
-				pkgs = append(pkgs, pkg)
-				break
+			sort.Strings(importPaths)
+			for _, importPath := range importPaths {
+				pkg := pkgs[0].Imports[importPath]
+				if pkg.Name != pkgName {
+					continue
+				}
+				obj = pkg.Types.Scope().Lookup(ifaceName)
+				if obj != nil {
+					pkgs = append(pkgs, pkg)
+					break
+				}
 			}
 		}
 		if obj == nil {

@@ -2,9 +2,6 @@
 
 ## Bugs
 
-- **Duplicate empty-package guard** (`simplemock.go:177–185`): The fix for the panic-on-empty-package-load left two consecutive `len(pkgs) == 0` checks with different error messages. The second check (lines 182–185) is unreachable dead code and should be removed.
-
-- **Misleading `strings.Cut` fallback logic** (`simplemock.go:179–182`): When `strings.Cut` returns `found=false` (no `.` in `typeName`), the swap `pkgName, typeName = typeName, pkgName` results in `pkgName=""`. The subsequent import-search loop then skips every package via `continue` (no package has an empty name), so control always falls through to the "Could not find type" error. The behaviour is accidentally correct but the logic is opaque and fragile.
 
 - **Output file never closed** (`simplemock.go:234`): `os.Create` opens a file descriptor that is never explicitly closed. Because `os.Exit` is called throughout `main()`, deferred `Close` calls would not run anyway, but even on the success path the file is left open until the process exits, risking incomplete flushes on some platforms.
 
