@@ -16,14 +16,16 @@ type TestingSuiteMock struct {
 
 func (m *TestingSuiteMock) SetS(suite suite.TestingSuite) {
 	if m.SetSFunc != nil {
-		return m.SetSFunc(suite)
+		m.SetSFunc(suite)
+		return
 	}
 	panic("SetS called with nil SetSFunc!")
 }
 
 func (m *TestingSuiteMock) SetT(arg0 *testing.T) {
 	if m.SetTFunc != nil {
-		return m.SetTFunc(arg0)
+		m.SetTFunc(arg0)
+		return
 	}
 	panic("SetT called with nil SetTFunc!")
 }
