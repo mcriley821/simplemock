@@ -19,7 +19,7 @@ import (
 
 const (
 	usageLine = `
-Usage: simplemock [-help] [-version] -iface interface -out outfile
+Usage: simplemock [-help] [-version] [-mock-name name] -iface interface -out outfile
 
 Options:
 `
@@ -45,6 +45,9 @@ instead of written to disk.
 Generated mocks will be defined in the test package corresponding to the
 package of the source file. In the case the source file is within the main
 package, the mock will also be defined in the main package.
+
+The optional flag -mock-name specifies the name of the generated mock struct.
+If not provided, the mock will be named {Interface}Mock by default.
 
 Mock structs export members corresponding to each method of the interface,
 named with a "Func" suffix. When the mocked method is invoked, the call is
@@ -136,10 +139,11 @@ func main() {
 func exec() int {
 	flag.Usage = usage
 
-	var typeName, fname string
+	var typeName, fname, mockName string
 
 	flag.StringVar(&typeName, "iface", "", "interface to generate a mock for")
 	flag.StringVar(&fname, "out", "", "relative output file")
+	flag.StringVar(&mockName, "mock-name", "", "name for the generated mock struct (default: {Interface}Mock)")
 	flag.BoolFunc("version", "print version and exit", versionExit)
 	flag.BoolFunc("help", "print detailed help and exit", helpExit)
 	flag.Parse()
@@ -272,11 +276,15 @@ func exec() int {
 		defer file.Close()
 	}
 
+	if mockName == "" {
+		mockName = obj.Name() + "Mock"
+	}
+
 	if err = templ.Execute(file, templData{
 		PackageName:   pkgName,
 		Imports:       imports,
 		InterfaceName: types.TypeString(obj.Type(), relativeTo),
-		MockName:      obj.Name() + "Mock",
+		MockName:      mockName,
 		Methods:       methods,
 	}); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate mock from template: %v\n", err)
