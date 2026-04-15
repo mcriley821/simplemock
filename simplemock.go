@@ -129,6 +129,10 @@ func versionExit(string) error {
 }
 
 func main() {
+	os.Exit(exec())
+}
+
+func exec() int {
 	flag.Usage = usage
 
 	var typeName, fname string
@@ -142,20 +146,20 @@ func main() {
 	if typeName == "" {
 		fmt.Fprintln(os.Stderr, "option '-iface' is required")
 		usage()
-		os.Exit(1)
+		return 1
 	}
 
 	if fname == "" {
 		fmt.Fprintln(os.Stderr, "option '-out' is required")
 		usage()
-		os.Exit(1)
+		return 1
 	}
 
 	inputFile := os.Getenv("GOFILE")
 	if inputFile == "" {
 		fmt.Fprintln(os.Stderr, "Expected GOFILE environment variable to be set.")
 		fmt.Fprintln(os.Stderr, "You should be using a //go:generate directive.")
-		os.Exit(1)
+		return 1
 	}
 
 	cfg := packages.Config{
@@ -172,18 +176,18 @@ func main() {
 	pkgs, err := packages.Load(&cfg, "file="+inputFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load input package and its dependencies: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 	if len(pkgs) == 0 {
 		fmt.Fprintf(os.Stderr, "No packages found for file: %s\n", inputFile)
-		os.Exit(1)
+		return 1
 	}
 
 	for _, pkg := range pkgs {
 		for _, e := range pkg.Errors {
 			if e.Kind == packages.ListError || e.Kind == packages.ParseError {
 				fmt.Fprintf(os.Stderr, "Package load error: %v\n", e)
-				os.Exit(1)
+				return 1
 			}
 		}
 	}
@@ -210,29 +214,29 @@ func main() {
 		}
 		if obj == nil {
 			fmt.Fprintf(os.Stderr, "Could not find type '%s'\n", typeName)
-			os.Exit(1)
+			return 1
 		}
 	}
 
 	if _, ok := obj.(*types.TypeName); !ok {
 		fmt.Fprintf(os.Stderr, "Type %v is not a named type\n", obj)
-		os.Exit(1)
+		return 1
 	}
 
 	if !types.IsInterface(obj.Type()) {
 		fmt.Fprintf(os.Stderr, "Type %v is not an interface\n", obj)
-		os.Exit(1)
+		return 1
 	}
 
 	if !obj.Exported() {
 		fmt.Fprintf(os.Stderr, "Interface %v is not exported\n", obj)
-		os.Exit(1)
+		return 1
 	}
 
 	imports, err := importsUsedBy(obj, pkgs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed getting %v imports: %v\n", obj, err)
-		os.Exit(1)
+		return 1
 	}
 
 	iface := obj.Type().Underlying().(*types.Interface)
@@ -251,31 +255,23 @@ func main() {
 		file, err = os.Create(filepath.Join(filepath.Dir(inputFile), fname))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create output file '%s': %v\n", fname, err)
-			os.Exit(1)
+			return 1
 		}
+		defer file.Close()
 	}
 
-	err = templ.Execute(file, templData{
+	if err = templ.Execute(file, templData{
 		PackageName:   pkgName,
 		Imports:       imports,
 		InterfaceName: types.TypeString(obj.Type(), relativeTo),
 		MockName:      obj.Name() + "Mock",
 		Methods:       methods,
-	})
-	if err != nil {
+	}); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate mock from template: %v\n", err)
-		if file != os.Stdout {
-			file.Close()
-		}
-		os.Exit(1)
+		return 1
 	}
 
-	if file != os.Stdout {
-		if err = file.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to close output file: %v\n", err)
-			os.Exit(1)
-		}
-	}
+	return 0
 }
 
 func importsUsedBy(obj types.Object, pkgs []*packages.Package) ([]*packages.Package, error) {
