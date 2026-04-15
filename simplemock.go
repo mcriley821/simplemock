@@ -181,10 +181,10 @@ func main() {
 
 	for _, pkg := range pkgs {
 		for _, e := range pkg.Errors {
-			fmt.Fprintf(os.Stderr, "Package load error: %v\n", e)
-		}
-		if len(pkg.Errors) > 0 {
-			os.Exit(1)
+			if e.Kind == packages.ListError || e.Kind == packages.ParseError {
+				fmt.Fprintf(os.Stderr, "Package load error: %v\n", e)
+				os.Exit(1)
+			}
 		}
 	}
 
