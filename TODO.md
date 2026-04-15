@@ -5,8 +5,6 @@
 
 - **Output file never closed** (`simplemock.go:234`): `os.Create` opens a file descriptor that is never explicitly closed. Because `os.Exit` is called throughout `main()`, deferred `Close` calls would not run anyway, but even on the success path the file is left open until the process exits, risking incomplete flushes on some platforms.
 
-- **`"path"` used for OS filesystem paths** (`simplemock.go:234`, `e2e/e2e_test.go:25,33`): The `path` package (designed for slash-separated URL paths) is used everywhere file-system paths are constructed. The correct package is `path/filepath`. On Windows, `path.Join` produces forward-slash paths that the OS does not accept, making the tool and tests non-portable.
-
 - **Package load errors silently ignored** (`simplemock.go:173`): After `packages.Load` returns, individual packages may still carry errors in their `pkg.Errors` slice even when the top-level `err` is `nil`. These are never inspected, so a partially-loaded or broken dependency can silently produce an incorrect mock.
 
 - **Redundant parentheses on single-return methods** (`simplemock.go:343`): `typeString(sig.Results())` formats a `*types.Tuple`, which always adds surrounding parentheses. Single-return signatures are emitted as `func Foo() (error)` instead of `func Foo() error`. The output is valid Go but non-idiomatic and would be reformatted by `gofmt`.
