@@ -13,7 +13,17 @@
 
 - **Mock name is fixed as `{Interface}Mock`** (`simplemock.go:245`): There is no `-mock-name` flag. If a type named `FooMock` already exists in the target package the generated file will not compile, and there is no way to work around it without patching the output manually.
 
-- **`os.Exit` prevents deferred cleanup** (`simplemock.go` throughout): `os.Exit` is called in at least ten places inside `main()`. Any resource that would be released via `defer` (e.g., closing the output file, flushing a writer) is silently skipped. Refactoring `main` to return an error and exit once at the top level would fix this.
+- **`os.Exit` prevents deferred cleanup** (`simplemock.go` throughout): `os.Exit` is called in at least ten places inside `main()`. Any resource that would be released via `defer` (e.g., closing the output file, flushing a writer) is silently skipped. Fix by making `main` a thin thunk and moving all logic into an `exec()` function that returns an exit code:
+
+  ```go
+  func main() {
+      os.Exit(exec())
+  }
+
+  func exec() int {
+      // original main body, replacing os.Exit(N) with return N
+  }
+  ```
 
 ## Missing Test Coverage
 
