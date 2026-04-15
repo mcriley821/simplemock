@@ -7,7 +7,7 @@ import (
 	"go/ast"
 	"go/types"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -247,7 +247,7 @@ func main() {
 
 	file := os.Stdout
 	if fname != "os.Stdout" {
-		file, err = os.Create(path.Clean(path.Join(path.Dir(inputFile), fname)))
+		file, err = os.Create(filepath.Join(filepath.Dir(inputFile), fname))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create output file '%s': %v\n", fname, err)
 			os.Exit(1)
