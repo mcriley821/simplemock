@@ -28,6 +28,7 @@ install *args:
     go install {{ args }} .
 
 test *args: install
+    go clean -testcache && go test -v {{ args }} .
     cd e2e && go clean -testcache && go test -v {{ args }} ./...
 
 clean *args:
