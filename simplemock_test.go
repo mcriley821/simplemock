@@ -232,3 +232,74 @@ func TestFindSourcePkg(t *testing.T) {
 		})
 	}
 }
+
+func TestConstraintString(t *testing.T) {
+	emptyIface := func() *types.Interface {
+		i := types.NewInterfaceType(nil, nil)
+		i.Complete()
+		return i
+	}()
+
+	ioReaderNamed := func() types.Type {
+		pkg := types.NewPackage("io", "io")
+		iface := types.NewInterfaceType(nil, nil)
+		iface.Complete()
+		return types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Reader", nil), iface, nil)
+	}()
+
+	comparableType := types.Universe.Lookup("comparable").Type()
+
+	tests := []struct {
+		name string
+		typ  types.Type
+		want string
+	}{
+		{"empty interface yields any", emptyIface, "any"},
+		{"named interface uses package-qualified name", ioReaderNamed, "io.Reader"},
+		{"comparable predeclared interface", comparableType, "comparable"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, constraintString(tc.typ))
+		})
+	}
+}
+
+func TestTypeParamDecl(t *testing.T) {
+	tests := []struct {
+		name   string
+		params []typeParam
+		want   string
+	}{
+		{"nil params", nil, ""},
+		{"empty params", []typeParam{}, ""},
+		{"single any", []typeParam{{Name: "T", Constraint: "any"}}, "[T any]"},
+		{"single comparable", []typeParam{{Name: "T", Constraint: "comparable"}}, "[T comparable]"},
+		{"two params", []typeParam{{Name: "K", Constraint: "comparable"}, {Name: "V", Constraint: "any"}}, "[K comparable, V any]"},
+		{"named constraint", []typeParam{{Name: "T", Constraint: "io.Reader"}}, "[T io.Reader]"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, typeParamDecl(tc.params))
+		})
+	}
+}
+
+func TestTypeParamUse(t *testing.T) {
+	tests := []struct {
+		name   string
+		params []typeParam
+		want   string
+	}{
+		{"nil params", nil, ""},
+		{"empty params", []typeParam{}, ""},
+		{"single param", []typeParam{{Name: "T", Constraint: "any"}}, "[T]"},
+		{"two params", []typeParam{{Name: "K", Constraint: "comparable"}, {Name: "V", Constraint: "any"}}, "[K, V]"},
+		{"constraint is not included", []typeParam{{Name: "T", Constraint: "io.Reader"}}, "[T]"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, typeParamUse(tc.params))
+		})
+	}
+}
