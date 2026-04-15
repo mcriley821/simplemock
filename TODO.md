@@ -2,8 +2,8 @@
 
 ## Bugs
 
+- **Void-method return statement**: The generated mock always emits `return m.FuncName(args)` for every method. For methods with no return values this is a compile error (`(no value) used as value`). The template must distinguish between void and non-void methods and emit a bare `return` (or no return at all) for the former.
+
 ## Architecture
 
 ## Future-Proofing
-
-- **No support for generic interfaces** (Go 1.18+): Interfaces with type parameters (`type Repo[T any] interface { Get() T }`) are not handled. The tool will reject them with a generic "not an interface" or "not a named type" error rather than a clear unsupported-feature message.
