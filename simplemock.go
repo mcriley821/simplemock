@@ -174,6 +174,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if len(pkgs) == 0 {
+		fmt.Fprintln(os.Stderr, "No packages found for input file")
+		os.Exit(1)
+	}
+
 	obj := pkgs[0].Types.Scope().Lookup(typeName)
 	if obj == nil {
 		pkgName, typeName, found := strings.Cut(typeName, ".")
