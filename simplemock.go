@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -197,20 +198,7 @@ func exec() int {
 		absInput = inputFile
 	}
 
-	isTestPkg := func(p *packages.Package) bool {
-		return strings.Contains(p.ID, "[") || strings.HasSuffix(p.Name, "_test")
-	}
-
-	var sourcePkg *packages.Package
-	for _, pkg := range pkgs {
-		for _, f := range pkg.GoFiles {
-			if f == absInput {
-				if sourcePkg == nil || (!isTestPkg(pkg) && isTestPkg(sourcePkg)) {
-					sourcePkg = pkg
-				}
-			}
-		}
-	}
+	sourcePkg := findSourcePkg(pkgs, absInput)
 	if sourcePkg == nil {
 		fmt.Fprintf(os.Stderr, "Could not find package containing %s\n", inputFile)
 		return 1
@@ -381,7 +369,7 @@ func signature(sig *types.Signature) string {
 			args[i] = name
 		}
 
-		if i == params.Len() - 1 && sig.Variadic() {
+		if i == params.Len()-1 && sig.Variadic() {
 			args[i] += " ..." + strings.TrimPrefix(typeString(param.Type()), "[]")
 		} else {
 			args[i] += " " + typeString(param.Type())
@@ -415,6 +403,15 @@ func defaultedArgs(sig *types.Signature) string {
 		return ret + "..."
 	}
 	return ret
+}
+
+func findSourcePkg(pkgs []*packages.Package, absInput string) *packages.Package {
+	for _, pkg := range pkgs {
+		if slices.Contains(pkg.GoFiles, absInput) {
+			return pkg
+		}
+	}
+	return nil
 }
 
 func relativeTo(pkg *types.Package) string {

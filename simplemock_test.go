@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/tools/go/packages"
 )
 
 func TestTypeString(t *testing.T) {
@@ -204,6 +205,30 @@ func TestRelativeTo(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.want, relativeTo(tc.pkg))
+		})
+	}
+}
+
+func TestFindSourcePkg(t *testing.T) {
+	pkgA := &packages.Package{GoFiles: []string{"/a/foo.go", "/a/bar.go"}}
+	pkgB := &packages.Package{GoFiles: []string{"/b/baz.go"}}
+
+	tests := []struct {
+		name     string
+		pkgs     []*packages.Package
+		absInput string
+		want     *packages.Package
+	}{
+		{"no packages", nil, "/a/foo.go", nil},
+		{"no match", []*packages.Package{pkgA, pkgB}, "/c/other.go", nil},
+		{"match in first package", []*packages.Package{pkgA, pkgB}, "/a/foo.go", pkgA},
+		{"match second file in first package", []*packages.Package{pkgA, pkgB}, "/a/bar.go", pkgA},
+		{"match in second package", []*packages.Package{pkgA, pkgB}, "/b/baz.go", pkgB},
+		{"returns first match", []*packages.Package{pkgA, pkgB}, "/a/foo.go", pkgA},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, findSourcePkg(tc.pkgs, tc.absInput))
 		})
 	}
 }
