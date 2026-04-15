@@ -192,16 +192,36 @@ func exec() int {
 		}
 	}
 
-	obj := pkgs[0].Types.Scope().Lookup(typeName)
+	absInput, absErr := filepath.Abs(inputFile)
+	if absErr != nil {
+		absInput = inputFile
+	}
+
+	var sourcePkg *packages.Package
+	for _, pkg := range pkgs {
+		for _, f := range pkg.GoFiles {
+			if f == absInput {
+				if sourcePkg == nil || strings.HasSuffix(sourcePkg.Name, "_test") {
+					sourcePkg = pkg
+				}
+			}
+		}
+	}
+	if sourcePkg == nil {
+		fmt.Fprintf(os.Stderr, "Could not find package containing %s\n", inputFile)
+		return 1
+	}
+
+	obj := sourcePkg.Types.Scope().Lookup(typeName)
 	if obj == nil {
 		if pkgName, ifaceName, found := strings.Cut(typeName, "."); found {
-			importPaths := make([]string, 0, len(pkgs[0].Imports))
-			for path := range pkgs[0].Imports {
+			importPaths := make([]string, 0, len(sourcePkg.Imports))
+			for path := range sourcePkg.Imports {
 				importPaths = append(importPaths, path)
 			}
 			sort.Strings(importPaths)
 			for _, importPath := range importPaths {
-				pkg := pkgs[0].Imports[importPath]
+				pkg := sourcePkg.Imports[importPath]
 				if pkg.Name != pkgName {
 					continue
 				}
@@ -245,9 +265,9 @@ func exec() int {
 		methods[i] = iface.Method(i)
 	}
 
-	pkgName := pkgs[0].Name
+	pkgName := sourcePkg.Name
 	if pkgName != "main" {
-		pkgName = strings.TrimSuffix(pkgs[0].Name, "_test") + "_test"
+		pkgName = strings.TrimSuffix(sourcePkg.Name, "_test") + "_test"
 	}
 
 	file := os.Stdout
