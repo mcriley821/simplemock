@@ -14,10 +14,6 @@
 - **Mock name is fixed as `{Interface}Mock`** (`simplemock.go:245`): There is no `-mock-name` flag. If a type named `FooMock` already exists in the target package the generated file will not compile, and there is no way to work around it without patching the output manually.
 
 
-## Missing Test Coverage
-
-- **No test for interfaces with unnamed parameters**: An interface method like `Read([]byte) (int, error)` (no parameter names) relies on the `arg%d` fallback in `signature()` and `defaultedArgs()`, but this path has no dedicated test.
-
 ## Future-Proofing
 
 - **No support for generic interfaces** (Go 1.18+): Interfaces with type parameters (`type Repo[T any] interface { Get() T }`) are not handled. The tool will reject them with a generic "not an interface" or "not a named type" error rather than a clear unsupported-feature message.
