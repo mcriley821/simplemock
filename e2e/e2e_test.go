@@ -12,8 +12,7 @@ import (
 
 func TestSimplemock(t *testing.T) {
 	testCases, err := os.ReadDir("testdata")
-	assert.NoError(t, err)
-	require.NotNil(t, testCases)
+	require.NoError(t, err)
 
 	root, err := os.Getwd()
 	require.NoError(t, err)
@@ -31,8 +30,7 @@ func TestSimplemock(t *testing.T) {
 			require.NoError(t, err, "output: %s", actual)
 
 			expected, err := os.ReadFile(path.Join(dirName, "expected.txt"))
-			assert.NoError(t, err)
-			require.NotNil(t, expected)
+			require.NoError(t, err)
 
 			assert.Equal(t, string(expected), string(actual))
 		})
