@@ -16,8 +16,6 @@
 
 ## Missing Test Coverage
 
-- **No test for the `-out <filename>` code path**: Every e2e test uses `-out os.Stdout`. The `os.Create` branch (writing to a real file) is completely untested.
-
 - **No test for interfaces with embedded interfaces**: A common Go pattern such as `type ReadWriter interface { io.Reader; io.Writer }` is not exercised. The AST visitor and import-collection logic may behave incorrectly for embedded types from external packages.
 
 - **No test for interfaces with unnamed parameters**: An interface method like `Read([]byte) (int, error)` (no parameter names) relies on the `arg%d` fallback in `signature()` and `defaultedArgs()`, but this path has no dedicated test.
