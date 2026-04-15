@@ -197,11 +197,15 @@ func exec() int {
 		absInput = inputFile
 	}
 
+	isTestPkg := func(p *packages.Package) bool {
+		return strings.Contains(p.ID, "[") || strings.HasSuffix(p.Name, "_test")
+	}
+
 	var sourcePkg *packages.Package
 	for _, pkg := range pkgs {
 		for _, f := range pkg.GoFiles {
 			if f == absInput {
-				if sourcePkg == nil || strings.HasSuffix(sourcePkg.Name, "_test") {
+				if sourcePkg == nil || (!isTestPkg(pkg) && isTestPkg(sourcePkg)) {
 					sourcePkg = pkg
 				}
 			}
