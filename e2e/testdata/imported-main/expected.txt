@@ -28,7 +28,7 @@ func (m *TestingSuiteMock) SetT(arg0 *testing.T) {
 	panic("SetT called with nil SetTFunc!")
 }
 
-func (m *TestingSuiteMock) T() (*testing.T) {
+func (m *TestingSuiteMock) T() *testing.T {
 	if m.TFunc != nil {
 		return m.TFunc()
 	}

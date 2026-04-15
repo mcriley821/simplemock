@@ -19,7 +19,7 @@ func (m *VariadicMock) Bar(xs ...io.Reader) (string, error) {
 	panic("Bar called with nil BarFunc!")
 }
 
-func (m *VariadicMock) Foo(x1 int, x2 int, xs ...int) (error) {
+func (m *VariadicMock) Foo(x1 int, x2 int, xs ...int) error {
 	if m.FooFunc != nil {
 		return m.FooFunc(x1, x2, xs...)
 	}

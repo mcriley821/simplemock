@@ -359,10 +359,14 @@ func signature(sig *types.Signature) string {
 	}
 
 	argsStr := strings.Join(args, ", ")
-	if sig.Results().Len() != 0 {
+	switch sig.Results().Len() {
+	case 0:
+		return fmt.Sprintf("(%s)", argsStr)
+	case 1:
+		return fmt.Sprintf("(%s) %s", argsStr, typeString(sig.Results().At(0).Type()))
+	default:
 		return fmt.Sprintf("(%s) %s", argsStr, typeString(sig.Results()))
 	}
-	return fmt.Sprintf("(%s)", argsStr)
 }
 
 func defaultedArgs(sig *types.Signature) string {
