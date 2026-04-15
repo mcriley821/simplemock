@@ -179,6 +179,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	for _, pkg := range pkgs {
+		for _, e := range pkg.Errors {
+			fmt.Fprintf(os.Stderr, "Package load error: %v\n", e)
+		}
+		if len(pkg.Errors) > 0 {
+			os.Exit(1)
+		}
+	}
+
 	obj := pkgs[0].Types.Scope().Lookup(typeName)
 	if obj == nil {
 		if pkgName, ifaceName, found := strings.Cut(typeName, "."); found {
