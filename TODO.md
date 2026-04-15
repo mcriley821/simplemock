@@ -3,10 +3,6 @@
 ## Bugs
 
 
-- **Output file never closed** (`simplemock.go:234`): `os.Create` opens a file descriptor that is never explicitly closed. Because `os.Exit` is called throughout `main()`, deferred `Close` calls would not run anyway, but even on the success path the file is left open until the process exits, risking incomplete flushes on some platforms.
-
-- **Redundant parentheses on single-return methods** (`simplemock.go:343`): `typeString(sig.Results())` formats a `*types.Tuple`, which always adds surrounding parentheses. Single-return signatures are emitted as `func Foo() (error)` instead of `func Foo() error`. The output is valid Go but non-idiomatic and would be reformatted by `gofmt`.
-
 ## Architecture
 
 - **E2E tests require a pre-installed binary** (`e2e/e2e_test.go:27`): The test suite shells out to `go generate`, which in turn invokes `simplemock` from `$PATH`. The tests therefore depend on an externally-installed binary and cannot verify the code under test in the same build. Running `go test ./e2e/...` on a clean checkout silently tests a stale or unrelated binary.
