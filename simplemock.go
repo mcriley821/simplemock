@@ -191,7 +191,13 @@ func main() {
 			pkgName, typeName = typeName, pkgName
 		}
 
-		for _, pkg := range pkgs[0].Imports {
+		importPaths := make([]string, 0, len(pkgs[0].Imports))
+		for path := range pkgs[0].Imports {
+			importPaths = append(importPaths, path)
+		}
+		sort.Strings(importPaths)
+		for _, importPath := range importPaths {
+			pkg := pkgs[0].Imports[importPath]
 			if pkg.Name != pkgName {
 				continue
 			}
