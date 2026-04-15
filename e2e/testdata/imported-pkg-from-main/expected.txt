@@ -12,7 +12,7 @@ type SuiteMock struct {
 	TestSuiteFunc func() suite.TestingSuite
 }
 
-func (m *SuiteMock) TestSuite() (suite.TestingSuite) {
+func (m *SuiteMock) TestSuite() suite.TestingSuite {
 	if m.TestSuiteFunc != nil {
 		return m.TestSuiteFunc()
 	}
