@@ -3,10 +3,6 @@
 ## Bugs
 
 
-- **Output file never closed** (`simplemock.go:234`): `os.Create` opens a file descriptor that is never explicitly closed. Because `os.Exit` is called throughout `main()`, deferred `Close` calls would not run anyway, but even on the success path the file is left open until the process exits, risking incomplete flushes on some platforms.
-
-- **Redundant parentheses on single-return methods** (`simplemock.go:343`): `typeString(sig.Results())` formats a `*types.Tuple`, which always adds surrounding parentheses. Single-return signatures are emitted as `func Foo() (error)` instead of `func Foo() error`. The output is valid Go but non-idiomatic and would be reformatted by `gofmt`.
-
 ## Architecture
 
 - **E2E tests require a pre-installed binary** (`e2e/e2e_test.go:27`): The test suite shells out to `go generate`, which in turn invokes `simplemock` from `$PATH`. The tests therefore depend on an externally-installed binary and cannot verify the code under test in the same build. Running `go test ./e2e/...` on a clean checkout silently tests a stale or unrelated binary.
@@ -17,7 +13,17 @@
 
 - **Mock name is fixed as `{Interface}Mock`** (`simplemock.go:245`): There is no `-mock-name` flag. If a type named `FooMock` already exists in the target package the generated file will not compile, and there is no way to work around it without patching the output manually.
 
-- **`os.Exit` prevents deferred cleanup** (`simplemock.go` throughout): `os.Exit` is called in at least ten places inside `main()`. Any resource that would be released via `defer` (e.g., closing the output file, flushing a writer) is silently skipped. Refactoring `main` to return an error and exit once at the top level would fix this.
+- **`os.Exit` prevents deferred cleanup** (`simplemock.go` throughout): `os.Exit` is called in at least ten places inside `main()`. Any resource that would be released via `defer` (e.g., closing the output file, flushing a writer) is silently skipped. Fix by making `main` a thin thunk and moving all logic into an `exec()` function that returns an exit code:
+
+  ```go
+  func main() {
+      os.Exit(exec())
+  }
+
+  func exec() int {
+      // original main body, replacing os.Exit(N) with return N
+  }
+  ```
 
 ## Missing Test Coverage
 

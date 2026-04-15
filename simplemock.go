@@ -262,10 +262,19 @@ func main() {
 		MockName:      obj.Name() + "Mock",
 		Methods:       methods,
 	})
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate mock from template: %v\n", err)
+		if file != os.Stdout {
+			file.Close()
+		}
 		os.Exit(1)
+	}
+
+	if file != os.Stdout {
+		if err = file.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close output file: %v\n", err)
+			os.Exit(1)
+		}
 	}
 }
 
