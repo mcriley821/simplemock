@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -192,16 +193,27 @@ func exec() int {
 		}
 	}
 
-	obj := pkgs[0].Types.Scope().Lookup(typeName)
+	absInput, absErr := filepath.Abs(inputFile)
+	if absErr != nil {
+		absInput = inputFile
+	}
+
+	sourcePkg := findSourcePkg(pkgs, absInput)
+	if sourcePkg == nil {
+		fmt.Fprintf(os.Stderr, "Could not find package containing %s\n", inputFile)
+		return 1
+	}
+
+	obj := sourcePkg.Types.Scope().Lookup(typeName)
 	if obj == nil {
 		if pkgName, ifaceName, found := strings.Cut(typeName, "."); found {
-			importPaths := make([]string, 0, len(pkgs[0].Imports))
-			for path := range pkgs[0].Imports {
+			importPaths := make([]string, 0, len(sourcePkg.Imports))
+			for path := range sourcePkg.Imports {
 				importPaths = append(importPaths, path)
 			}
 			sort.Strings(importPaths)
 			for _, importPath := range importPaths {
-				pkg := pkgs[0].Imports[importPath]
+				pkg := sourcePkg.Imports[importPath]
 				if pkg.Name != pkgName {
 					continue
 				}
@@ -245,9 +257,9 @@ func exec() int {
 		methods[i] = iface.Method(i)
 	}
 
-	pkgName := pkgs[0].Name
+	pkgName := sourcePkg.Name
 	if pkgName != "main" {
-		pkgName = strings.TrimSuffix(pkgs[0].Name, "_test") + "_test"
+		pkgName = strings.TrimSuffix(sourcePkg.Name, "_test") + "_test"
 	}
 
 	file := os.Stdout
@@ -357,7 +369,7 @@ func signature(sig *types.Signature) string {
 			args[i] = name
 		}
 
-		if i == params.Len() - 1 && sig.Variadic() {
+		if i == params.Len()-1 && sig.Variadic() {
 			args[i] += " ..." + strings.TrimPrefix(typeString(param.Type()), "[]")
 		} else {
 			args[i] += " " + typeString(param.Type())
@@ -391,6 +403,15 @@ func defaultedArgs(sig *types.Signature) string {
 		return ret + "..."
 	}
 	return ret
+}
+
+func findSourcePkg(pkgs []*packages.Package, absInput string) *packages.Package {
+	for _, pkg := range pkgs {
+		if slices.Contains(pkg.GoFiles, absInput) {
+			return pkg
+		}
+	}
+	return nil
 }
 
 func relativeTo(pkg *types.Package) string {
