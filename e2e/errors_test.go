@@ -18,6 +18,7 @@ func TestSimplemockErrors(t *testing.T) {
 
 	emptyMainDir := filepath.Join(root, "testdata", "empty-main")
 	errorTypesDir := filepath.Join(root, "testdata", "error-types")
+	genericIfaceDir := filepath.Join(root, "testdata", "generic-iface")
 
 	testCases := []struct {
 		name               string
@@ -74,6 +75,14 @@ func TestSimplemockErrors(t *testing.T) {
 			args:               []string{"-iface", "unexported", "-out", "os.Stdout"},
 			wantExitCode:       1,
 			wantStderrContains: "is not exported",
+		},
+		{
+			name:               "generic interface",
+			dir:                genericIfaceDir,
+			goFile:             "main.go",
+			args:               []string{"-iface", "GenericRepo", "-out", "os.Stdout"},
+			wantExitCode:       1,
+			wantStderrContains: "generic interfaces are not supported",
 		},
 	}
 

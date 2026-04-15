@@ -244,6 +244,11 @@ func exec() int {
 		return 1
 	}
 
+	if named, ok := obj.Type().(*types.Named); ok && named.TypeParams().Len() > 0 {
+		fmt.Fprintf(os.Stderr, "Interface %v is generic - generic interfaces are not supported\n", obj)
+		return 1
+	}
+
 	if !obj.Exported() {
 		fmt.Fprintf(os.Stderr, "Interface %v is not exported\n", obj)
 		return 1
