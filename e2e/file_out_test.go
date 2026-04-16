@@ -14,7 +14,7 @@ func TestSimplemockFileOut(t *testing.T) {
 	root, err := os.Getwd()
 	require.NoError(t, err)
 
-	dir := filepath.Join(root, "testdata", "empty-main")
+	dir := filepath.Join(root, "testdata", "golden", "empty-main")
 	outFile := filepath.Join(dir, "empty_mock.go")
 
 	t.Cleanup(func() { os.Remove(outFile) })

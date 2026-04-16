@@ -16,7 +16,7 @@ func TestSimplemockErrors(t *testing.T) {
 	root, err := os.Getwd()
 	require.NoError(t, err)
 
-	emptyMainDir := filepath.Join(root, "testdata", "empty-main")
+	emptyMainDir := filepath.Join(root, "testdata", "golden", "empty-main")
 	errorTypesDir := filepath.Join(root, "testdata", "error-types")
 
 	testCases := []struct {
