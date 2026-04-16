@@ -11,7 +11,7 @@ import (
 )
 
 func TestSimplemock(t *testing.T) {
-	testCases, err := os.ReadDir("testdata")
+	testCases, err := os.ReadDir("testdata/golden")
 	require.NoError(t, err)
 
 	root, err := os.Getwd()
@@ -21,11 +21,7 @@ func TestSimplemock(t *testing.T) {
 		t.Run(testCase.Name(), func(t *testing.T) {
 			require.True(t, testCase.IsDir(), "expected %s to be a module directory", testCase.Name())
 
-			dirName := filepath.Join(root, "testdata", testCase.Name())
-
-			if _, err := os.Stat(filepath.Join(dirName, "expected.txt")); os.IsNotExist(err) {
-				t.Fatalf("testdata/%s has no expected.txt; move error fixtures to e2e/fixtures/ instead", testCase.Name())
-			}
+			dirName := filepath.Join(root, "testdata", "golden", testCase.Name())
 
 			cmd := exec.Command("go", "generate", "./...")
 			cmd.Dir = dirName
