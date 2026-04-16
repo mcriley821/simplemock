@@ -154,10 +154,14 @@ func versionExit(string) error {
 }
 
 func main() {
-	os.Exit(exec())
+	if err := exec(); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, "An error occurred:", err)
+		os.Exit(1)
+	}
+	os.Exit(0)
 }
 
-func exec() int {
+func exec() error {
 	flag.Usage = usage
 
 	var typeName, fname, mockName string
@@ -170,22 +174,16 @@ func exec() int {
 	flag.Parse()
 
 	if typeName == "" {
-		fmt.Fprintln(os.Stderr, "option '-iface' is required")
-		usage()
-		return 1
+		return errors.New("option '-iface' is required")
 	}
 
 	if fname == "" {
-		fmt.Fprintln(os.Stderr, "option '-out' is required")
-		usage()
-		return 1
+		return errors.New("option '-out' is required")
 	}
 
 	inputFile := os.Getenv("GOFILE")
 	if inputFile == "" {
-		fmt.Fprintln(os.Stderr, "Expected GOFILE environment variable to be set.")
-		fmt.Fprintln(os.Stderr, "You should be using a //go:generate directive.")
-		return 1
+		return errors.New("environment variable GOFILE is required")
 	}
 
 	cfg := packages.Config{
@@ -201,19 +199,17 @@ func exec() int {
 
 	pkgs, err := packages.Load(&cfg, "file="+inputFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load input package and its dependencies: %v\n", err)
-		return 1
+		return fmt.Errorf("loading input package: %w", err)
 	}
+
 	if len(pkgs) == 0 {
-		fmt.Fprintf(os.Stderr, "No packages found for file: %s\n", inputFile)
-		return 1
+		return fmt.Errorf("finding packages for file: %s", inputFile)
 	}
 
 	for _, pkg := range pkgs {
 		for _, e := range pkg.Errors {
 			if e.Kind == packages.ListError || e.Kind == packages.ParseError {
-				fmt.Fprintf(os.Stderr, "Package load error: %v\n", e)
-				return 1
+				return fmt.Errorf("loading package %s: %w", pkg.Name, e)
 			}
 		}
 	}
@@ -225,8 +221,7 @@ func exec() int {
 
 	sourcePkg := findSourcePkg(pkgs, absInput)
 	if sourcePkg == nil {
-		fmt.Fprintf(os.Stderr, "Could not find package containing %s\n", inputFile)
-		return 1
+		return fmt.Errorf("finding package containing %s", inputFile)
 	}
 
 	obj := sourcePkg.Types.Scope().Lookup(typeName)
@@ -250,30 +245,25 @@ func exec() int {
 			}
 		}
 		if obj == nil {
-			fmt.Fprintf(os.Stderr, "Could not find type '%s'\n", typeName)
-			return 1
+			return fmt.Errorf("finding type: %s", typeName)
 		}
 	}
 
 	if _, ok := obj.(*types.TypeName); !ok {
-		fmt.Fprintf(os.Stderr, "Type %v is not a named type\n", obj)
-		return 1
+		return fmt.Errorf("expected a named type: %v", obj)
 	}
 
 	if !types.IsInterface(obj.Type()) {
-		fmt.Fprintf(os.Stderr, "Type %v is not an interface\n", obj)
-		return 1
+		return fmt.Errorf("expected an interface: %v", obj)
 	}
 
 	if !obj.Exported() {
-		fmt.Fprintf(os.Stderr, "Interface %v is not exported\n", obj)
-		return 1
+		return fmt.Errorf("must be exported: %v", obj)
 	}
 
 	imports, err := importsUsedBy(obj, pkgs)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed getting %v imports: %v\n", obj, err)
-		return 1
+		return fmt.Errorf("getting %v imports: %w", obj, err)
 	}
 
 	iface := obj.Type().Underlying().(*types.Interface)
@@ -304,8 +294,7 @@ func exec() int {
 	if fname != "os.Stdout" {
 		file, err = os.Create(filepath.Join(filepath.Dir(inputFile), fname))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create output file '%s': %v\n", fname, err)
-			return 1
+			return fmt.Errorf("creating output file '%s': %w", fname, err)
 		}
 		defer file.Close()
 	}
@@ -333,11 +322,10 @@ func exec() int {
 		Methods:       methods,
 		TypeParams:    typeParams,
 	}); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate mock from template: %v\n", err)
-		return 1
+		return fmt.Errorf("generating mock from template: %w", err)
 	}
 
-	return 0
+	return nil
 }
 
 func importsUsedBy(obj types.Object, pkgs []*packages.Package) ([]*packages.Package, error) {

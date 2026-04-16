@@ -49,7 +49,7 @@ func TestSimplemockErrors(t *testing.T) {
 			goFile:             "", // GOFILE intentionally omitted
 			args:               []string{"-iface", "Empty", "-out", "os.Stdout"},
 			wantExitCode:       1,
-			wantStderrContains: "Expected GOFILE environment variable to be set.",
+			wantStderrContains: "GOFILE is required",
 		},
 		{
 			name:               "type not found",
@@ -57,7 +57,7 @@ func TestSimplemockErrors(t *testing.T) {
 			goFile:             "main.go",
 			args:               []string{"-iface", "NonExistent", "-out", "os.Stdout"},
 			wantExitCode:       1,
-			wantStderrContains: "Could not find type 'NonExistent'",
+			wantStderrContains: "finding type: NonExistent",
 		},
 		{
 			name:               "non-interface type",
@@ -65,7 +65,7 @@ func TestSimplemockErrors(t *testing.T) {
 			goFile:             "main.go",
 			args:               []string{"-iface", "NotAnInterface", "-out", "os.Stdout"},
 			wantExitCode:       1,
-			wantStderrContains: "is not an interface",
+			wantStderrContains: "expected an interface",
 		},
 		{
 			name:               "non-exported interface",
@@ -73,7 +73,7 @@ func TestSimplemockErrors(t *testing.T) {
 			goFile:             "main.go",
 			args:               []string{"-iface", "unexported", "-out", "os.Stdout"},
 			wantExitCode:       1,
-			wantStderrContains: "is not exported",
+			wantStderrContains: "must be exported",
 		},
 	}
 
