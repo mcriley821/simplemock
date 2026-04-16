@@ -24,7 +24,7 @@ func TestSimplemock(t *testing.T) {
 			dirName := filepath.Join(root, "testdata", testCase.Name())
 
 			if _, err := os.Stat(filepath.Join(dirName, "expected.txt")); os.IsNotExist(err) {
-				t.Skip("no expected.txt, skipping golden file test")
+				t.Fatalf("testdata/%s has no expected.txt; move error fixtures to e2e/fixtures/ instead", testCase.Name())
 			}
 
 			cmd := exec.Command("go", "generate", "./...")
